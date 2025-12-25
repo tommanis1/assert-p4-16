@@ -56,6 +56,7 @@ def main():
         full_log = []
 
         # Step 1: Compile P4 to JSON using p4c-bm2-ss
+        parse_start = time.time()
         try:
             returncode, stdout, stderr = run_cmd(
                 ["p4c-bm2-ss", p4_file, "--toJSON", json_file],
@@ -65,19 +66,23 @@ def main():
             full_log.append("=== P4C Compilation ===\n{}".format(p4c_output))
         except subprocess.TimeoutExpired:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4C timeout"}))
+            parse_ms = int((time.time() - parse_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4C timeout", "trace": [("parse", parse_ms)]}))
             sys.exit(1)
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4C error: {}".format(e)}))
+            parse_ms = int((time.time() - parse_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4C error: {}".format(e), "trace": [("parse", parse_ms)]}))
             sys.exit(1)
 
         if returncode != 0 or not os.path.isfile(json_file):
             elapsed_ms = int((time.time() - start_time) * 1000)
+            parse_ms = int((time.time() - parse_start) * 1000)
             print(json.dumps({
                 "verdict": "error",
                 "time_ms": elapsed_ms,
-                "details": "P4C compilation failed:\n{}".format(p4c_output)
+                "details": "P4C compilation failed:\n{}".format(p4c_output),
+                "trace": [("parse", parse_ms)]
             }))
             sys.exit(1)
 
@@ -95,27 +100,35 @@ def main():
             full_log.append("=== P4 to C Translation ===\nstderr: {}".format(stderr))
         except subprocess.TimeoutExpired:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4 to C translation timeout"}))
+            parse_ms = int((time.time() - parse_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4 to C translation timeout", "trace": [("parse", parse_ms)]}))
             sys.exit(1)
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4 to C translation error: {}".format(e)}))
+            parse_ms = int((time.time() - parse_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "P4 to C translation error: {}".format(e), "trace": [("parse", parse_ms)]}))
             sys.exit(1)
 
         if returncode != 0:
             elapsed_ms = int((time.time() - start_time) * 1000)
+            parse_ms = int((time.time() - parse_start) * 1000)
             print(json.dumps({
                 "verdict": "error",
                 "time_ms": elapsed_ms,
-                "details": "P4 to C translation failed:\n{}".format(stderr)
+                "details": "P4 to C translation failed:\n{}".format(stderr),
+                "trace": [("parse", parse_ms)]
             }))
             sys.exit(1)
+
+        # Parse phase complete
+        parse_ms = int((time.time() - parse_start) * 1000)
 
         # Write C code to file
         with open(c_file, 'w') as f:
             f.write(stdout)
 
         # Step 3: Compile C to LLVM bitcode using clang
+        verify_start = time.time()
         try:
             returncode, stdout, stderr = run_cmd(
                 ["clang", "-emit-llvm", "-g", "-c", c_file, "-o", bc_file],
@@ -125,19 +138,23 @@ def main():
             full_log.append("=== Clang Compilation ===\n{}".format(clang_output))
         except subprocess.TimeoutExpired:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "Clang compilation timeout"}))
+            verify_ms = int((time.time() - verify_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "Clang compilation timeout", "trace": [("parse", parse_ms), ("verify", verify_ms)]}))
             sys.exit(1)
         except Exception as e:
             elapsed_ms = int((time.time() - start_time) * 1000)
-            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "Clang error: {}".format(e)}))
+            verify_ms = int((time.time() - verify_start) * 1000)
+            print(json.dumps({"verdict": "error", "time_ms": elapsed_ms, "details": "Clang error: {}".format(e), "trace": [("parse", parse_ms), ("verify", verify_ms)]}))
             sys.exit(1)
 
         if returncode != 0 or not os.path.isfile(bc_file):
             elapsed_ms = int((time.time() - start_time) * 1000)
+            verify_ms = int((time.time() - verify_start) * 1000)
             print(json.dumps({
                 "verdict": "error",
                 "time_ms": elapsed_ms,
-                "details": "Clang compilation failed:\n{}".format(clang_output)
+                "details": "Clang compilation failed:\n{}".format(clang_output),
+                "trace": [("parse", parse_ms), ("verify", verify_ms)]
             }))
             sys.exit(1)
 
@@ -156,6 +173,8 @@ def main():
             timed_out = True
             returncode = -1
 
+        # Verify phase complete
+        verify_ms = int((time.time() - verify_start) * 1000)
         elapsed_ms = int((time.time() - start_time) * 1000)
 
         # Parse KLEE output for assertion failures
@@ -187,7 +206,8 @@ def main():
         result = {
             "verdict": verdict,
             "time_ms": elapsed_ms,
-            "details": "\n".join(full_log)
+            "details": "\n".join(full_log),
+            "trace": [("parse", parse_ms), ("verify", verify_ms)]
         }
 
         if assertion_errors:
