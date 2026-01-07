@@ -30,14 +30,31 @@ def run_cmd(cmd, timeout=60, cwd=None):
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({
-            "error": "Usage: assert-p4 <p4_file> [forwarding_rules.txt] [timeout_seconds]",
+            "error": "Usage: entrypoint.py <json_payload>",
             "verdict": "error"
         }), file=sys.stderr)
         sys.exit(1)
 
-    p4_file = sys.argv[1]
-    forwarding_rules = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].isdigit() else None
-    timeout = int(sys.argv[-1]) if sys.argv[-1].isdigit() else 300
+    try:
+        input_data = json.loads(sys.argv[1])
+    except json.JSONDecodeError as e:
+        print(json.dumps({
+            "error": f"Invalid JSON input: {e}",
+            "verdict": "error"
+        }), file=sys.stderr)
+        sys.exit(1)
+
+    files = input_data.get("files", [])
+    if not files:
+        print(json.dumps({
+            "error": "No P4 files provided in JSON payload",
+            "verdict": "error"
+        }))
+        sys.exit(1)
+
+    p4_file = files[0]
+    forwarding_rules = files[1] if len(files) > 1 else None
+    timeout = input_data.get("timeout", 300)
 
     # Validate input file
     if not os.path.isfile(p4_file):
