@@ -1,3 +1,4 @@
+# file: C_translation.py
 import re
 import uuid
 
@@ -58,7 +59,7 @@ def toC(node):
     # test for annotations
     returnString = ""
     if hasattr(node, "annotations"):
-        returnString += Annotations(node.annotations)
+        returnString += Annotations(node)
     if 'Vector' in node.Node_Type:
         for v in node.vec:
             #returnString += "<<" + str(v.Node_ID) + ">>"
@@ -71,8 +72,32 @@ def toC(node):
 
 ########### TYPE FUNCTIONS ###########
 
+def Declaration_Constant(node):
+    """Handle constant declarations."""
+    # Constants might need to be stored for later use
+    # For now, we'll just return an empty string since constants
+    # are typically used in other contexts
+    if hasattr(node, 'name') and hasattr(node, 'value'):
+        # You might want to store these in a global dict for reference
+        # For example: constants[node.name] = node.value
+        pass
+    return ""
+
+def Argument(node):
+    """Handle argument nodes."""
+    # An Argument node typically wraps an expression
+    if hasattr(node, 'expression'):
+        return toC(node.expression)
+    elif hasattr(node, 'value'):
+        return toC(node.value)
+    else:
+        # Debug: print what attributes this node has
+        print("Warning: Argument node without expected attributes")
+        print("  Available attributes:", [attr for attr in dir(node) if not attr.startswith('_')])
+        return ""
+    
 def P4Program(node):
-    return toC(node.declarations)
+    return toC(node.objects)
 
 def P4Control(node):
     returnString = "//Control\n"
@@ -170,13 +195,21 @@ def Annotation(node):
 
 def Annotations(node):
     returnString = ""
+    print node
     for annotation in node.annotations.vec:
         if annotation.name == "assert":
-            assert_string = annotation.expr.vec[0].value
-            assertionResults = assertion(assert_string, annotation.expr.vec[0].Node_ID)
+            # print "annotation123"
+            # print annotation
+            # The annotation has body.value.vec[0].text structure
+            if hasattr(annotation, 'body') and hasattr(annotation.body, 'value'):
+                assert_string = annotation.body.value.vec[0].text
+                assertionResults = assertion(assert_string, annotation.body.value.vec[0].Node_ID)
+            else:
+                # Fallback to old structure if it exists
+                assert_string = annotation.expr.vec[0].value if hasattr(annotation, 'expr') else ""
+                assertionResults = assertion(assert_string, annotation.Node_ID)
+            
             returnString += assertionResults[0]
-            #if assert_string[1] != "":
-            #    message = assert_string[1] + "\\n"
             global finalAssertions
             finalAssertions += "\t//if(!(" + assertionResults[1] + ")) assert_error(\"" + assertionResults[1] + "\");\n"
     return returnString
@@ -287,24 +320,162 @@ def ConstructorCallExpression(node):
     #return "<ConstructorCallExpression>" + str(node.Node_ID)
     return "" 
 
+# def Declaration_Instance(node):
+#     returnString = ""
+#     if node.name == "main":
+#         if package == "V1Switch":
+#             parser = node.arguments.vec[0].type.path.name if hasattr(node.arguments.vec[0].type, "path") else node.arguments.vec[0].type.name
+#             ingress = node.arguments.vec[2].type.path.name if hasattr(node.arguments.vec[2].type, "path") else node.arguments.vec[2].type.name
+#             egress = node.arguments.vec[3].type.path.name if hasattr(node.arguments.vec[3].type, "path") else node.arguments.vec[3].type.name
+#             deparser = node.arguments.vec[5].type.path.name if hasattr(node.arguments.vec[5].type, "path") else node.arguments.vec[5].type.name
+#             returnString += "int main() {\n\t" +  parser + "();\n\t" + ingress + "();\n\t" + egress + "();\n\t" + deparser +  "();\n\tend_assertions();\n\treturn 0;\n}\n"
+#         elif package == "VSS":
+#             parser = node.arguments.vec[0].type.path.name if hasattr(node.arguments.vec[0].type, "path") else node.arguments.vec[0].type.name
+#             ingress = node.arguments.vec[1].type.path.name if hasattr(node.arguments.vec[1].type, "path") else node.arguments.vec[1].type.name
+#             deparser = node.arguments.vec[2].type.path.name if hasattr(node.arguments.vec[2].type, "path") else node.arguments.vec[2].type.name
+#             returnString += "int main() {\n\t" +  parser + "();\n\t" + ingress + "();\n\t" + deparser + "();\n\tend_assertions();\n\treturn 0;\n}\n"
+#     elif hasattr(node.type, "path"):
+#         declarationTypes[node.name] = node.type.path.name
+#     return returnString        
+
 def Declaration_Instance(node):
     returnString = ""
-    if node.name == "main":
-        if package == "V1Switch":
-            parser = node.arguments.vec[0].type.path.name if hasattr(node.arguments.vec[0].type, "path") else node.arguments.vec[0].type.name
-            ingress = node.arguments.vec[2].type.path.name if hasattr(node.arguments.vec[2].type, "path") else node.arguments.vec[2].type.name
-            egress = node.arguments.vec[3].type.path.name if hasattr(node.arguments.vec[3].type, "path") else node.arguments.vec[3].type.name
-            deparser = node.arguments.vec[5].type.path.name if hasattr(node.arguments.vec[5].type, "path") else node.arguments.vec[5].type.name
-            returnString += "int main() {\n\t" +  parser + "();\n\t" + ingress + "();\n\t" + egress + "();\n\t" + deparser +  "();\n\tend_assertions();\n\treturn 0;\n}\n"
-        elif package == "VSS":
-            parser = node.arguments.vec[0].type.path.name if hasattr(node.arguments.vec[0].type, "path") else node.arguments.vec[0].type.name
-            ingress = node.arguments.vec[1].type.path.name if hasattr(node.arguments.vec[1].type, "path") else node.arguments.vec[1].type.name
-            deparser = node.arguments.vec[2].type.path.name if hasattr(node.arguments.vec[2].type, "path") else node.arguments.vec[2].type.name
-            returnString += "int main() {\n\t" +  parser + "();\n\t" + ingress + "();\n\t" + deparser + "();\n\tend_assertions();\n\treturn 0;\n}\n"
-    elif hasattr(node.type, "path"):
-        declarationTypes[node.name] = node.type.path.name
-    return returnString        
     
+    if node.name == "main":
+        # Check for package type
+        if not package:
+            print "Warning: No package type set, but found main declaration"
+            # Try to infer from the type
+            if hasattr(node, 'type') and hasattr(node.type, 'baseType'):
+                if hasattr(node.type.baseType, 'path'):
+                    package_name = node.type.baseType.path.name
+                    print "Inferred package type:", package_name
+                    # Set the global package variable if needed
+                    global package
+                    if package_name == "V1Switch":
+                        package = "V1Switch"
+                    elif package_name == "VSS":
+                        package = "VSS"
+        
+        if package == "V1Switch":
+            try:
+                # Helper function to extract name from an Argument node
+                def get_component_name(arg):
+                    # Check if it's an Argument wrapping a ConstructorCallExpression
+                    if hasattr(arg, 'expression'):
+                        expr = arg.expression
+                        if hasattr(expr, 'constructedType'):
+                            # ConstructorCallExpression - get the type name
+                            if hasattr(expr.constructedType, 'path'):
+                                return expr.constructedType.path.name
+                            elif hasattr(expr.constructedType, 'name'):
+                                return expr.constructedType.name
+                        elif hasattr(expr, 'type'):
+                            # Might have type directly
+                            if hasattr(expr.type, 'path'):
+                                return expr.type.path.name
+                            elif hasattr(expr.type, 'name'):
+                                return expr.type.name
+                        elif hasattr(expr, 'path'):
+                            # PathExpression
+                            return expr.path.name
+                    # Fallback - try the old paths
+                    elif hasattr(arg, 'type'):
+                        if hasattr(arg.type, 'path'):
+                            return arg.type.path.name
+                        elif hasattr(arg.type, 'name'):
+                            return arg.type.name
+                    
+                    # Debug if we can't extract
+                    print "Could not extract name from argument"
+                    return None
+                
+                # V1Switch expects: parser, verifyChecksum, ingress, egress, updateChecksum, deparser
+                # Extract each component name
+                parser = get_component_name(node.arguments.vec[0]) if len(node.arguments.vec) > 0 else None
+                verify = get_component_name(node.arguments.vec[1]) if len(node.arguments.vec) > 1 else None
+                ingress = get_component_name(node.arguments.vec[2]) if len(node.arguments.vec) > 2 else None
+                egress = get_component_name(node.arguments.vec[3]) if len(node.arguments.vec) > 3 else None
+                update = get_component_name(node.arguments.vec[4]) if len(node.arguments.vec) > 4 else None
+                deparser = get_component_name(node.arguments.vec[5]) if len(node.arguments.vec) > 5 else None
+                
+                # Build main function
+                if parser and ingress and egress and deparser:
+                    returnString = "int main() {\n\t"
+                    returnString += parser + "();\n\t"
+                    returnString += ingress + "();\n\t"
+                    returnString += egress + "();\n\t"
+                    returnString += deparser + "();\n\t"
+                    returnString += "end_assertions();\n\treturn 0;\n}\n"
+                else:
+                    print "Warning: Could not extract all required V1Switch components"
+                    print "  Parser:", parser
+                    print "  VerifyChecksum:", verify
+                    print "  Ingress:", ingress
+                    print "  Egress:", egress
+                    print "  UpdateChecksum:", update
+                    print "  Deparser:", deparser
+                    returnString = "// Could not generate main function - missing components\n"
+                    
+            except Exception as e:
+                print "Error in Declaration_Instance for V1Switch:", e
+                import traceback
+                traceback.print_exc()
+                returnString = "// Error generating main function\n"
+                
+        elif package == "VSS":
+            try:
+                def get_component_name(arg):
+                    # Same extraction logic as above
+                    if hasattr(arg, 'expression'):
+                        expr = arg.expression
+                        if hasattr(expr, 'constructedType'):
+                            if hasattr(expr.constructedType, 'path'):
+                                return expr.constructedType.path.name
+                            elif hasattr(expr.constructedType, 'name'):
+                                return expr.constructedType.name
+                        elif hasattr(expr, 'type'):
+                            if hasattr(expr.type, 'path'):
+                                return expr.type.path.name
+                            elif hasattr(expr.type, 'name'):
+                                return expr.type.name
+                        elif hasattr(expr, 'path'):
+                            return expr.path.name
+                    elif hasattr(arg, 'type'):
+                        if hasattr(arg.type, 'path'):
+                            return arg.type.path.name
+                        elif hasattr(arg.type, 'name'):
+                            return arg.type.name
+                    return None
+                
+                parser = get_component_name(node.arguments.vec[0]) if len(node.arguments.vec) > 0 else None
+                ingress = get_component_name(node.arguments.vec[1]) if len(node.arguments.vec) > 1 else None
+                deparser = get_component_name(node.arguments.vec[2]) if len(node.arguments.vec) > 2 else None
+                
+                if parser and ingress and deparser:
+                    returnString = "int main() {\n\t"
+                    returnString += parser + "();\n\t"
+                    returnString += ingress + "();\n\t"
+                    returnString += deparser + "();\n\t"
+                    returnString += "end_assertions();\n\treturn 0;\n}\n"
+                else:
+                    returnString = "// Could not generate main function for VSS - missing components\n"
+                    
+            except Exception as e:
+                print "Error in Declaration_Instance for VSS:", e
+                returnString = "// Error generating main function\n"
+        else:
+            print "Unknown package type:", package
+            returnString = "// Unknown package type\n"
+            
+    elif hasattr(node, 'type') and hasattr(node.type, "path"):
+        declarationTypes[node.name] = node.type.path.name
+        # Still return empty string for non-main instances
+        returnString = ""
+    
+    # ALWAYS return a string, never None
+    return returnString
+
 def Declaration_Variable(node):
     if node.type.Node_Type == "Type_Bits":
         return bitsSizeToType(node.type.size) + " " + node.name + ";"
