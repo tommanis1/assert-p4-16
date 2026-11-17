@@ -1,0 +1,382 @@
+--- /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_learner/reference.c	2025-12-23 11:57:25.741486031 +0100
++++ /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_learner/generated.c	2025-12-23 11:57:25.741346094 +0100
+@@ -2,26 +2,41 @@
+ #include<stdio.h>
+ #include<stdint.h>
+ #include<stdlib.h>
++#include<assert.h>
+ 
++// KLEE function stubs
++void klee_make_symbolic(void *addr, unsigned long nbytes, const char *name);
++void klee_abort(void);
++void klee_assume(int condition);
++void klee_print_once(int id, const char *msg);
++
++// Checksum function stubs (no-op for verification)
++void verify_checksum(void) {}
++void update_checksum(void) {}
++
++int assert_forward = 1;
+ int action_run;
+ 
++void end_assertions();
++
+ 
+-void handle_2b_0_167621();
+-void handle_new_value_0_167739();
+-void NoAction_0_165463();
+-void place_holder_table_165473();
+-void transport_tbl_165310();
++void learner_tbl_173563();
++void handle_2b_0_175808();
++void reset_consensus_instance_173669();
+ void parse_udp();
+-void reset_consensus_instance_165240();
++void forward_0_173712();
++void read_round_0_173440();
+ void accept();
++void transport_tbl_173739();
+ void start();
+ void parse_paxos();
+-void learner_tbl_165134();
+-void _drop_0_164995();
++void NoAction_0_173894();
+ void reject();
+-void forward_0_165283();
+ void parse_ipv4();
+-void read_round_0_165011();
++void _drop_0_173424();
++void handle_new_value_0_175926();
++void place_holder_table_173904();
++
+ typedef struct {
+ 	uint32_t ingress_port : 9;
+ 	uint32_t egress_spec : 9;
+@@ -40,10 +55,12 @@
+ 	uint32_t mcast_grp : 16;
+ 	uint8_t resubmit_flag : 1;
+ 	uint32_t egress_rid : 16;
++	uint8_t checksum_error : 1;
+ } standard_metadata_t;
+ 
+ void mark_to_drop() {
+-	printf("Packet dropped\n");
++	assert_forward = 0;
++	end_assertions();
+ 	exit(0);
+ }
+ 
+@@ -58,7 +75,6 @@
+ 	EthernetAddress dstAddr: 48;
+ 	EthernetAddress srcAddr: 48;
+ 	uint32_t etherType : 16;
+-	uint8_t $valid$ : 1;
+ } ethernet_t;
+ 
+ typedef struct {
+@@ -75,7 +91,6 @@
+ 	uint32_t hdrChecksum : 16;
+ 	IPv4Address srcAddr: 32;
+ 	IPv4Address dstAddr: 32;
+-	uint8_t $valid$ : 1;
+ } ipv4_t;
+ 
+ typedef struct {
+@@ -84,7 +99,6 @@
+ 	uint32_t dstPort : 16;
+ 	uint32_t length_ : 16;
+ 	uint32_t checksum : 16;
+-	uint8_t $valid$ : 1;
+ } udp_t;
+ 
+ typedef struct {
+@@ -96,7 +110,6 @@
+ 	uint32_t acptid : 16;
+ 	uint32_t paxoslen : 32;
+ 	uint64_t paxosval : 64;
+-	uint8_t $valid$ : 1;
+ } paxos_t;
+ 
+ typedef struct {
+@@ -123,32 +136,38 @@
+ 
+ 
+ void start() {
++	//Extract hdr.ethernet
+ 	hdr.ethernet.isValid = 1;
+-	switch(hdr.ethernet.etherType){
+-		case 2048:	parse_ipv4(); break;
++	if((hdr.ethernet.etherType == 2048)){
++		parse_ipv4();
+ 	}
+ }
+ 
+ 
+ void parse_ipv4() {
++	//Extract hdr.ipv4
+ 	hdr.ipv4.isValid = 1;
+-	switch(hdr.ipv4.protocol){
+-		case 17:	parse_udp(); break;
+-		default:	accept(); break;
++	if((hdr.ipv4.protocol == 17)){
++		parse_udp();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_udp() {
++	//Extract hdr.udp
+ 	hdr.udp.isValid = 1;
+-	switch(hdr.udp.dstPort){
+-		case 34952:	parse_paxos(); break;
+-		default:	accept(); break;
++	if((hdr.udp.dstPort == 34952)){
++		parse_paxos();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_paxos() {
++	//Extract hdr.paxos
+ 	hdr.paxos.isValid = 1;
+ 	accept();
+ }
+@@ -160,7 +179,8 @@
+ 
+ 
+ void reject() {
+-	printf("Packet dropped");
++	assert_forward = 0;
++	end_assertions();
+ 	exit(0);
+ }
+ 
+@@ -202,42 +222,34 @@
+ } tuple_0;
+ 
+ //Control
+-uint32_t tmp_2;
+ 
+ void verifyChecksum() {
+-		klee_make_symbolic(&tmp_2, sizeof(tmp_2), "tmp_2");
+-
+-	if((hdr.ipv4.hdrChecksum == tmp_2)) {
+-	mark_to_drop();
+-}
++	
+ }
+ 
+ 
+ //Control
+-uint32_t tmp_4;
+ 
+ void computeChecksum() {
+-		klee_make_symbolic(&tmp_4, sizeof(tmp_4), "tmp_4");
+-
+-	hdr.ipv4.hdrChecksum = tmp_4;
++	
+ }
+ 
+ 
+ //Control
+ 
+ void ingress() {
+-	if((hdr.ipv4.$valid$ == 1)) {
+-	if((hdr.paxos.$valid$ == 1)) {
+-		read_round_0_165011();
++	if(hdr.ipv4.isValid) {
++	if(hdr.paxos.isValid) {
++		read_round_0_173440();
+ 	if(hdr.paxos.rnd > meta.paxos_metadata.round) {
+-	reset_consensus_instance_165240();
++	reset_consensus_instance_173669();
+ } else {
+ 	if((hdr.paxos.rnd == meta.paxos_metadata.round)) {
+-	learner_tbl_165134();
++	learner_tbl_173563();
+ }
+ }
+ 	if((meta.paxos_metadata.ack_acceptors == 6) || (meta.paxos_metadata.ack_acceptors == 5) || (meta.paxos_metadata.ack_acceptors == 3)) {
+-	transport_tbl_165310();
++	transport_tbl_173739();
+ }
+ 
+ }
+@@ -245,45 +257,49 @@
+ }
+ 
+ // Action
+-void _drop_0_164995() {
+-	action_run = 164995;
++void _drop_0_173424() {
++	action_run = 173424;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void read_round_0_165011() {
+-	action_run = 165011;
+-	uint32_t tmp_round;
+-	klee_make_symbolic(&tmp_round, sizeof(tmp_round), "tmp_round");
+-	meta.paxos_metadata.round = tmp_round;
++void read_round_0_173440() {
++	action_run = 173440;
++		
++	uint64_t t953771c6_4a2e_46ac_800d_09039efaba99;
++	klee_make_symbolic(&t953771c6_4a2e_46ac_800d_09039efaba99, sizeof(t953771c6_4a2e_46ac_800d_09039efaba99), "t953771c6_4a2e_46ac_800d_09039efaba99");
++	meta.paxos_metadata.round = t953771c6_4a2e_46ac_800d_09039efaba99;
+ 
+ 	meta.paxos_metadata.set_drop = 1;
+-	uint8_t tmp_ack_acceptors;
+-	klee_make_symbolic(&tmp_ack_acceptors, sizeof(tmp_ack_acceptors), "tmp_ack_acceptors");
+-	meta.paxos_metadata.ack_acceptors = tmp_ack_acceptors;
++	
++	uint64_t t23c3016d_df5e_45f2_831d_66647438d02c;
++	klee_make_symbolic(&t23c3016d_df5e_45f2_831d_66647438d02c, sizeof(t23c3016d_df5e_45f2_831d_66647438d02c), "t23c3016d_df5e_45f2_831d_66647438d02c");
++	meta.paxos_metadata.ack_acceptors = t23c3016d_df5e_45f2_831d_66647438d02c;
++
+ 
+ }
+ 
+ 
+ // Action
+-void handle_2b_0_167621() {
+-	action_run = 167621;
+-	meta.paxos_metadata.ack_acceptors = meta.paxos_metadata.ack_acceptors | 1 << (uint8_t) hdr.paxos.acptid;
++void handle_2b_0_175808() {
++	action_run = 175808;
++		meta.paxos_metadata.ack_acceptors = meta.paxos_metadata.ack_acceptors | 1 << (uint8_t) hdr.paxos.acptid;
++
+ }
+ 
+ 
+ // Action
+-void handle_new_value_0_167739() {
+-	action_run = 167739;
++void handle_new_value_0_175926() {
++	action_run = 175926;
+ 	
+ }
+ 
+ 
+ // Action
+-void forward_0_165283() {
+-	action_run = 165283;
++void forward_0_173712() {
++	action_run = 173712;
+ 	PortId port;
+ 	klee_make_symbolic(&port, sizeof(port), "port");
+ uint32_t learnerPort;
+@@ -295,44 +311,44 @@
+ 
+ 
+ //Table
+-void learner_tbl_165134() {
++void learner_tbl_173563() {
+ 	// keys: hdr.paxos.msgtype:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: handle_2b_0_167621(); break;
++		default: handle_2b_0_175808(); break;
+ 	}
+ 	// size 1
+-	// default_action handle_2b_0();
++	// default_action handle_2b_0_175808();
+ 
+ }
+ 
+ 
+ //Table
+-void reset_consensus_instance_165240() {
++void reset_consensus_instance_173669() {
+ 	// keys: hdr.paxos.msgtype:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: handle_new_value_0_167739(); break;
++		default: handle_new_value_0_175926(); break;
+ 	}
+ 	// size 1
+-	// default_action handle_new_value_0();
++	// default_action handle_new_value_0_175926();
+ 
+ }
+ 
+ 
+ //Table
+-void transport_tbl_165310() {
++void transport_tbl_173739() {
+ 	// keys: meta.paxos_metadata.set_drop:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		case 0: _drop_0_164995(); break;
+-		default: forward_0_165283(); break;
++		case 0: _drop_0_173424(); break;
++		default: forward_0_173712(); break;
+ 	}
+ 	// size 2
+-	// default_action _drop_0();
++	// default_action _drop_0_173424();
+ 
+ }
+ 
+@@ -341,30 +357,28 @@
+ //Control
+ 
+ void egress() {
+-	place_holder_table_165473();
++	place_holder_table_173904();
+ }
+ 
+ // Action
+-void NoAction_0_165463() {
+-	action_run = 165463;
++void NoAction_0_173894() {
++	action_run = 173894;
+ 	
+ }
+ 
+ 
+ //Table
+-void place_holder_table_165473() {
++void place_holder_table_173904() {
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: NoAction_0_165463(); break;
++		default: NoAction_0_173894(); break;
+ 	}
+ 	// size 2
+-	// default_action NoAction_0();
++	// default_action NoAction_0_173894();
+ 
+ }
+ 
+-void end_assertions(){
+-}
+ 
+ 
+ int main() {
+@@ -375,3 +389,14 @@
+ 	end_assertions();
+ 	return 0;
+ }
++
++void assert_error(char msg[]) {
++	printf("Assertion Error: %s", msg);
++	klee_abort();
++}
++
++void end_assertions(){
++}
++
++
++

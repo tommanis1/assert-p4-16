@@ -1,0 +1,149 @@
+--- /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/ts_switching/reference.c	2025-12-23 11:57:28.227491980 +0100
++++ /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/ts_switching/generated.c	2025-12-23 11:57:28.227355649 +0100
+@@ -2,33 +2,42 @@
+ #include<stdio.h>
+ #include<stdint.h>
+ #include<stdlib.h>
++#include<assert.h>
++
++// KLEE function stubs
++void klee_make_symbolic(void *addr, unsigned long nbytes, const char *name);
++void klee_abort(void);
++void klee_assume(int condition);
++void klee_print_once(int id, const char *msg);
++
++// Checksum function stubs (no-op for verification)
++void verify_checksum(void) {}
++void update_checksum(void) {}
+ 
+ int assert_forward = 1;
+ int action_run;
+ 
+-int hdr_ipv4_dstAddr_eq_4009820417_112630;
+-int hdr_rtp_timestamp_eq_3;
+-int hdr_rtp_timestamp_eq_4;
++void end_assertions();
++
++
++ int hdr_ipv4_dstAddr_eq_7_114129;
++
++ int hdr_rtp_timestamp_eq_3_114129;
++
++ int hdr_rtp_timestamp_eq_4_114129;
+ 
+-void _drop_112602();
++void take_video_114071();
+ void parse_udp();
+-void NoAction_0_112548();
+-void take_video_112572();
++void schedule_table_114124();
+ void accept();
+ void start();
+ void parse_ethernet();
+ void reject();
++void _drop_114101();
+ void parse_ipv4();
+-void schedule_table_112625();
++void NoAction_0_114047();
+ void parse_rtp();
+ 
+-void end_assertions(){
+-	if(assert_forward && hdr_ipv4_dstAddr_eq_4009820417_112630 && (hdr_rtp_timestamp_eq_3 || hdr_rtp_timestamp_eq_4)){
+-	printf("Assert error: if expression forward && hdr.ipv4.srcAddr == 4009820417, !(hdr.rtp.timestamp == 3 || hdr.rtp.timestamp == 4) evaluated to false");
+-	}
+-
+-}
+-
+ typedef struct {
+ 	uint32_t ingress_port : 9;
+ 	uint32_t egress_spec : 9;
+@@ -186,49 +195,51 @@
+ //Control
+ 
+ void ingress() {
+-	schedule_table_112625();
++	schedule_table_114124();
+ }
+ 
+ // Action
+-void NoAction_0_112548() {
+-	action_run = 112548;
++void NoAction_0_114047() {
++	action_run = 114047;
+ 	
+ }
+ 
+ 
+ // Action
+-void take_video_112572(uint32_t dst_ip) {
+-	action_run = 112572;
+-		standard_metadata.egress_spec = 1;
++void take_video_114071() {
++	action_run = 114071;
++	uint32_t dst_ip;
++	klee_make_symbolic(&dst_ip, sizeof(dst_ip), "dst_ip");
++	standard_metadata.egress_spec = 1;
+ 	hdr.ipv4.dstAddr = dst_ip;
+ 
+ }
+ 
+ 
+ // Action
+-void _drop_112602() {
+-	action_run = 112602;
++void _drop_114101() {
++	action_run = 114101;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+-// Table
+-void schedule_table_112625() {
+-
+-	hdr_ipv4_dstAddr_eq_4009820417_112630 = (hdr.ipv4.dstAddr == 4009820417);
+-	hdr_rtp_timestamp_eq_3 = (hdr.rtp.timestamp == 3);
+-	hdr_rtp_timestamp_eq_4 = (hdr.rtp.timestamp == 4);
+-
+-	if(hdr.ipv4.dstAddr == 4009820417 && hdr.rtp.timestamp >= 0 && hdr.rtp.timestamp <= 2){
+-		take_video_112572(4009952003);
+-	} else	if(hdr.ipv4.dstAddr == 4009886210 && hdr.rtp.timestamp >= 3 && hdr.rtp.timestamp <= 4){
+-		take_video_112572(4009952003);
+-	} else	if(hdr.ipv4.dstAddr == 4009820417 && hdr.rtp.timestamp >= 5 && hdr.rtp.timestamp <= 15){
+-		take_video_112572(4009952003);
+-	} else {
+-		_drop_112602();
++//Table
++void schedule_table_114124() {
++hdr_ipv4_dstAddr_eq_7_114129 = (hdr.ipv4.dstAddr  ==  4009820417);
++	hdr_rtp_timestamp_eq_3_114129 = (hdr.rtp.timestamp  ==  3);
++	hdr_rtp_timestamp_eq_4_114129 = (hdr.rtp.timestamp  ==  4);
++		int symbol;
++	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
++	switch(symbol) {
++		case 0: take_video_114071(); break;
++		case 1: _drop_114101(); break;
++		default: NoAction_0_114047(); break;
+ 	}
++	// keys: hdr.ipv4.dstAddr:exact, hdr.rtp.timestamp:range
++	// size 16384
++	// default_action NoAction_0_114047();
++
+ }
+ 
+ 
+@@ -270,5 +281,14 @@
+ 	return 0;
+ }
+ 
++void assert_error(char msg[]) {
++	printf("Assertion Error: %s", msg);
++	klee_abort();
++}
++
++void end_assertions(){
++	//if(!(!((assert_forward) && (hdr_ipv4_dstAddr_eq_7_114129)) || (!((hdr_rtp_timestamp_eq_3_114129) || (hdr_rtp_timestamp_eq_4_114129))))) assert_error("!((assert_forward) && (hdr_ipv4_dstAddr_eq_7_114129)) || (!((hdr_rtp_timestamp_eq_3_114129) || (hdr_rtp_timestamp_eq_4_114129)))");
++}
++
+ 
+ 

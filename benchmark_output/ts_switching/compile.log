@@ -1,0 +1,8 @@
+=== P4C Compilation ===
+SUCCESS
+
+=== P4_to_C Translation ===
+SUCCESS
+
+=== Diff Result ===
+DIFFERS: 96 lines

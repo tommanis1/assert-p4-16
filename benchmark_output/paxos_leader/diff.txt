@@ -1,0 +1,371 @@
+--- /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_leader/reference.c	2025-12-23 11:57:24.356180996 +0100
++++ /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_leader/generated.c	2025-12-23 11:57:24.355833698 +0100
+@@ -2,29 +2,44 @@
+ #include<stdio.h>
+ #include<stdint.h>
+ #include<stdlib.h>
++#include<assert.h>
+ 
++// KLEE function stubs
++void klee_make_symbolic(void *addr, unsigned long nbytes, const char *name);
++void klee_abort(void);
++void klee_assume(int condition);
++void klee_print_once(int id, const char *msg);
++
++// Checksum function stubs (no-op for verification)
++void verify_checksum(void) {}
++void update_checksum(void) {}
++
++int assert_forward = 1;
+ int action_run;
+ 
+-int traverse_increase_instance = 0;
+-int mesg_type_2a = -1;
+-int forward = 1;
++void end_assertions();
++
++int traverse_154662 = 0;
+ 
++ int hdr_paxos_msgtype_eq_2_154662;
++int traverse_154735 = 0;
+ 
+-void forward_0_144407();
+-void _drop_2_144269();
+-void NoAction_0_144533();
++void _drop_0_154623();
++void _drop_2_154639();
++void reset_instance_0_154704();
+ void parse_udp();
+-void reset_instance_0_144327();
+-void _drop_0_144253();
+-void increase_instance_0_144276();
++void leader_tbl_154736();
++void NoAction_0_154919();
+ void accept();
+ void start();
+ void parse_paxos();
++void forward_0_154791();
++void transport_tbl_154818();
+ void reject();
+-void transport_tbl_144434();
+-void place_holder_table_144543();
++void increase_instance_0_154646();
+ void parse_ipv4();
+-void leader_tbl_144352();
++void place_holder_table_154929();
++
+ typedef struct {
+ 	uint32_t ingress_port : 9;
+ 	uint32_t egress_spec : 9;
+@@ -43,11 +58,11 @@
+ 	uint32_t mcast_grp : 16;
+ 	uint8_t resubmit_flag : 1;
+ 	uint32_t egress_rid : 16;
++	uint8_t checksum_error : 1;
+ } standard_metadata_t;
+ 
+ void mark_to_drop() {
+-	//printf("Packet dropped\n");
+-	forward = 0;
++	assert_forward = 0;
+ 	end_assertions();
+ 	exit(0);
+ }
+@@ -63,7 +78,6 @@
+ 	EthernetAddress dstAddr: 48;
+ 	EthernetAddress srcAddr: 48;
+ 	uint32_t etherType : 16;
+-	uint8_t $valid$ : 1;
+ } ethernet_t;
+ 
+ typedef struct {
+@@ -80,7 +94,6 @@
+ 	uint32_t hdrChecksum : 16;
+ 	IPv4Address srcAddr: 32;
+ 	IPv4Address dstAddr: 32;
+-	uint8_t $valid$ : 1;
+ } ipv4_t;
+ 
+ typedef struct {
+@@ -89,7 +102,6 @@
+ 	uint32_t dstPort : 16;
+ 	uint32_t length_ : 16;
+ 	uint32_t checksum : 16;
+-	uint8_t $valid$ : 1;
+ } udp_t;
+ 
+ typedef struct {
+@@ -101,7 +113,6 @@
+ 	uint32_t acptid : 16;
+ 	uint32_t paxoslen : 32;
+ 	uint64_t paxosval : 64;
+-	uint8_t $valid$ : 1;
+ } paxos_t;
+ 
+ typedef struct {
+@@ -128,32 +139,38 @@
+ 
+ 
+ void start() {
++	//Extract hdr.ethernet
+ 	hdr.ethernet.isValid = 1;
+-	switch(hdr.ethernet.etherType){
+-		case 2048:	parse_ipv4(); break;
++	if((hdr.ethernet.etherType == 2048)){
++		parse_ipv4();
+ 	}
+ }
+ 
+ 
+ void parse_ipv4() {
++	//Extract hdr.ipv4
+ 	hdr.ipv4.isValid = 1;
+-	switch(hdr.ipv4.protocol){
+-		case 17:	parse_udp(); break;
+-		default:	accept(); break;
++	if((hdr.ipv4.protocol == 17)){
++		parse_udp();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_udp() {
++	//Extract hdr.udp
+ 	hdr.udp.isValid = 1;
+-	switch(hdr.udp.dstPort){
+-		case 34952:	parse_paxos(); break;
+-		default:	accept(); break;
++	if((hdr.udp.dstPort == 34952)){
++		parse_paxos();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_paxos() {
++	//Extract hdr.paxos
+ 	hdr.paxos.isValid = 1;
+ 	accept();
+ }
+@@ -165,8 +182,7 @@
+ 
+ 
+ void reject() {
+-	//printf("Packet dropped");
+-	forward = 0;
++	assert_forward = 0;
+ 	end_assertions();
+ 	exit(0);
+ }
+@@ -209,64 +225,56 @@
+ } tuple_0;
+ 
+ //Control
+-uint32_t tmp_2;
+ 
+ void verifyChecksum() {
+-		klee_make_symbolic(&tmp_2, sizeof(tmp_2), "tmp_2");
+-
+-	if((hdr.ipv4.hdrChecksum == tmp_2)) {
+-	mark_to_drop();
+-}
++	
+ }
+ 
+ 
+ //Control
+-uint32_t tmp_4;
+ 
+ void computeChecksum() {
+-		klee_make_symbolic(&tmp_4, sizeof(tmp_4), "tmp_4");
+-
+-	hdr.ipv4.hdrChecksum = tmp_4;
++	
+ }
+ 
+ 
+ //Control
+ 
+ void ingress() {
+-	if((hdr.ipv4.$valid$ == 1)) {
+-	if((hdr.paxos.$valid$ == 1)) {
+-		leader_tbl_144352();
+-	transport_tbl_144434();
++	if(hdr.ipv4.isValid) {
++	if(hdr.paxos.isValid) {
++		leader_tbl_154736();
++	transport_tbl_154818();
+ 
+ }
+ }
+ }
+ 
+ // Action
+-void _drop_0_144253() {
+-	action_run = 144253;
++void _drop_0_154623() {
++	action_run = 154623;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void _drop_2_144269() {
+-	action_run = 144269;
++void _drop_2_154639() {
++	action_run = 154639;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void increase_instance_0_144276() {
+-	traverse_increase_instance = 1;
+-	mesg_type_2a = (hdr.paxos.msgtype == 2);
+-
+-	action_run = 144276;
+-	uint32_t tmp_inst;
+-	klee_make_symbolic(&tmp_inst, sizeof(tmp_inst), "tmp_inst");
+-	hdr.paxos.inst = tmp_inst;
++void increase_instance_0_154646() {
++	action_run = 154646;
++		traverse_154662 = 1;hdr_paxos_msgtype_eq_2_154662 = (hdr.paxos.msgtype  ==  2);
++	
++	
++	uint64_t t14933575_866d_4b08_9b07_5e84fa4b53e3;
++	klee_make_symbolic(&t14933575_866d_4b08_9b07_5e84fa4b53e3, sizeof(t14933575_866d_4b08_9b07_5e84fa4b53e3), "t14933575_866d_4b08_9b07_5e84fa4b53e3");
++	hdr.paxos.inst = t14933575_866d_4b08_9b07_5e84fa4b53e3;
+ 
+ 	hdr.paxos.inst = hdr.paxos.inst + 1;
+ 	meta.paxos_metadata.set_drop = 0;
+@@ -275,16 +283,17 @@
+ 
+ 
+ // Action
+-void reset_instance_0_144327() {
+-	action_run = 144327;
++void reset_instance_0_154704() {
++	action_run = 154704;
+ 		meta.paxos_metadata.set_drop = 1;
++	traverse_154735 = 1;
+ 
+ }
+ 
+ 
+ // Action
+-void forward_0_144407() {
+-	action_run = 144407;
++void forward_0_154791() {
++	action_run = 154791;
+ 	PortId port;
+ 	klee_make_symbolic(&port, sizeof(port), "port");
+ uint32_t acceptorPort;
+@@ -296,32 +305,32 @@
+ 
+ 
+ //Table
+-void leader_tbl_144352() {
++void leader_tbl_154736() {
+ 	// keys: hdr.paxos.msgtype:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		case 0: increase_instance_0_144276(); break;
+-		case 1: reset_instance_0_144327(); break;
+-		default: _drop_0_144253(); break;
++		case 0: increase_instance_0_154646(); break;
++		case 1: reset_instance_0_154704(); break;
++		default: _drop_0_154623(); break;
+ 	}
+ 	// size 4
+-	// default_action _drop_0();
++	// default_action _drop_0_154623();
+ 
+ }
+ 
+ 
+ //Table
+-void transport_tbl_144434() {
++void transport_tbl_154818() {
+ 	// keys: meta.paxos_metadata.set_drop:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		case 0: _drop_2_144269(); break;
+-		default: forward_0_144407(); break;
++		case 0: _drop_2_154639(); break;
++		default: forward_0_154791(); break;
+ 	}
+ 	// size 2
+-	// default_action _drop_2();
++	// default_action _drop_2_154639();
+ 
+ }
+ 
+@@ -330,39 +339,29 @@
+ //Control
+ 
+ void egress() {
+-	place_holder_table_144543();
++	place_holder_table_154929();
+ }
+ 
+ // Action
+-void NoAction_0_144533() {
+-	action_run = 144533;
++void NoAction_0_154919() {
++	action_run = 154919;
+ 	
+ }
+ 
+ 
+ //Table
+-void place_holder_table_144543() {
++void place_holder_table_154929() {
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: NoAction_0_144533(); break;
++		default: NoAction_0_154919(); break;
+ 	}
+ 	// size 2
+-	// default_action NoAction_0();
++	// default_action NoAction_0_154919();
+ 
+ }
+ 
+-void end_assertions(){
+-	if(traverse_increase_instance && !mesg_type_2a && (mesg_type_2a != -1)){
+-		klee_warning("increase_instance called without msg type 2a");
+-		klee_assert(0);
+-	}
+ 
+-	if(traverse_increase_instance && !forward){
+-		klee_warning("increase_instance called but packet dropped");
+-		klee_assert(0);
+-	}
+-}
+ 
+ int main() {
+ 	TopParser();
+@@ -373,4 +372,15 @@
+ 	return 0;
+ }
+ 
++void assert_error(char msg[]) {
++	printf("Assertion Error: %s", msg);
++	klee_abort();
++}
++
++void end_assertions(){
++	//if(!(!(traverse_154662) || (hdr_paxos_msgtype_eq_2_154662))) assert_error("!(traverse_154662) || (hdr_paxos_msgtype_eq_2_154662)");
++	//if(!(!(traverse_154735) || (!(assert_forward)))) assert_error("!(traverse_154735) || (!(assert_forward))");
++}
++
++
+ 

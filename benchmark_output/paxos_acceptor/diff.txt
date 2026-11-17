@@ -1,0 +1,437 @@
+--- /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_acceptor/reference.c	2025-12-23 11:57:23.144961176 +0100
++++ /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/paxos_acceptor/generated.c	2025-12-23 11:57:23.144811782 +0100
+@@ -2,33 +2,41 @@
+ #include<stdio.h>
+ #include<stdint.h>
+ #include<stdlib.h>
++#include<assert.h>
+ 
++// KLEE function stubs
++void klee_make_symbolic(void *addr, unsigned long nbytes, const char *name);
++void klee_abort(void);
++void klee_assume(int condition);
++void klee_print_once(int id, const char *msg);
++
++// Checksum function stubs (no-op for verification)
++void verify_checksum(void) {}
++void update_checksum(void) {}
++
++int assert_forward = 1;
+ int action_run;
+-int traverse_handle_1a = 0;
+-int handle_1a_msg_type = -1;
+-int traverse_handle_2a = 0;
+-int handle_2a_msg_type = -1;
+-int forward = 1;
+-uint32_t constant_acptid;
+ 
++void end_assertions();
+ 
+ 
+-void _drop_2_163187();
+-void _drop_0_163171();
+-void transport_tbl_163485();
+-void acceptor_tbl_163403();
+-void NoAction_0_163602();
++void acceptor_tbl_169692();
++void place_holder_table_169903();
++void forward_0_169747();
++void handle_1a_0_169534();
+ void parse_udp();
+-void handle_1a_0_165781();
+-void handle_2a_0_163324();
++void _drop_2_169496();
+ void accept();
+ void start();
+ void parse_paxos();
+-void place_holder_table_163612();
++void transport_tbl_169774();
++void _drop_0_169480();
++void NoAction_0_169893();
+ void reject();
++void read_round_0_169503();
+ void parse_ipv4();
+-void read_round_0_163194();
+-void forward_0_163458();
++void handle_2a_0_169613();
++
+ typedef struct {
+ 	uint32_t ingress_port : 9;
+ 	uint32_t egress_spec : 9;
+@@ -47,11 +55,11 @@
+ 	uint32_t mcast_grp : 16;
+ 	uint8_t resubmit_flag : 1;
+ 	uint32_t egress_rid : 16;
++	uint8_t checksum_error : 1;
+ } standard_metadata_t;
+ 
+ void mark_to_drop() {
+-	//printf("Packet dropped\n");
+-	forward = 0;
++	assert_forward = 0;
+ 	end_assertions();
+ 	exit(0);
+ }
+@@ -67,7 +75,6 @@
+ 	EthernetAddress dstAddr: 48;
+ 	EthernetAddress srcAddr: 48;
+ 	uint32_t etherType : 16;
+-	uint8_t $valid$ : 1;
+ } ethernet_t;
+ 
+ typedef struct {
+@@ -84,7 +91,6 @@
+ 	uint32_t hdrChecksum : 16;
+ 	IPv4Address srcAddr: 32;
+ 	IPv4Address dstAddr: 32;
+-	uint8_t $valid$ : 1;
+ } ipv4_t;
+ 
+ typedef struct {
+@@ -93,7 +99,6 @@
+ 	uint32_t dstPort : 16;
+ 	uint32_t length_ : 16;
+ 	uint32_t checksum : 16;
+-	uint8_t $valid$ : 1;
+ } udp_t;
+ 
+ typedef struct {
+@@ -105,7 +110,6 @@
+ 	uint32_t acptid : 16;
+ 	uint32_t paxoslen : 32;
+ 	uint64_t paxosval : 64;
+-	uint8_t $valid$ : 1;
+ } paxos_t;
+ 
+ typedef struct {
+@@ -132,33 +136,38 @@
+ 
+ 
+ void start() {
++	//Extract hdr.ethernet
+ 	hdr.ethernet.isValid = 1;
+-	switch(hdr.ethernet.etherType){
+-		case 2048:	parse_ipv4(); break;
+-		default: reject();
++	if((hdr.ethernet.etherType == 2048)){
++		parse_ipv4();
+ 	}
+ }
+ 
+ 
+ void parse_ipv4() {
++	//Extract hdr.ipv4
+ 	hdr.ipv4.isValid = 1;
+-	switch(hdr.ipv4.protocol){
+-		case 17:	parse_udp(); break;
+-		default:	accept(); break;
++	if((hdr.ipv4.protocol == 17)){
++		parse_udp();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_udp() {
++	//Extract hdr.udp
+ 	hdr.udp.isValid = 1;
+-	switch(hdr.udp.dstPort){
+-		case 34952:	parse_paxos(); break;
+-		default:	accept(); break;
++	if((hdr.udp.dstPort == 34952)){
++		parse_paxos();
++	} else {
++		accept();
+ 	}
+ }
+ 
+ 
+ void parse_paxos() {
++	//Extract hdr.paxos
+ 	hdr.paxos.isValid = 1;
+ 	accept();
+ }
+@@ -170,8 +179,7 @@
+ 
+ 
+ void reject() {
+-	//printf("Packet dropped");
+-	forward = 0;
++	assert_forward = 0;
+ 	end_assertions();
+ 	exit(0);
+ }
+@@ -181,7 +189,7 @@
+ 	klee_make_symbolic(&hdr, sizeof(hdr), "hdr");
+ 	klee_make_symbolic(&meta, sizeof(meta), "meta");
+ 	klee_make_symbolic(&standard_metadata, sizeof(standard_metadata), "standard_metadata");
+-	constant_acptid = hdr.paxos.acptid;
++
+ 	start();
+ }
+ 
+@@ -214,38 +222,28 @@
+ } tuple_0;
+ 
+ //Control
+-uint32_t tmp_6;
+ 
+ void verifyChecksum() {
+-		klee_make_symbolic(&tmp_6, sizeof(tmp_6), "tmp_6");
+-
+-	if((hdr.ipv4.hdrChecksum == tmp_6)) {
+-	mark_to_drop();
+-}
++	
+ }
+ 
+ 
+ //Control
+-uint32_t tmp_8;
+ 
+ void computeChecksum() {
+-		klee_make_symbolic(&tmp_8, sizeof(tmp_8), "tmp_8");
+-
+-	hdr.ipv4.hdrChecksum = tmp_8;
++	
+ }
+ 
+ 
+ //Control
+-uint32_t tmp_9;
+-uint64_t tmp_11;
+ 
+ void ingress() {
+-	if((hdr.ipv4.$valid$ == 1)) {
+-	if((hdr.paxos.$valid$ == 1)) {
+-		read_round_0_163194();
++	if(hdr.ipv4.isValid) {
++	if(hdr.paxos.isValid) {
++		read_round_0_169503();
+ 	if(hdr.paxos.rnd >= meta.paxos_metadata.round) {
+-		acceptor_tbl_163403();
+-	transport_tbl_163485();
++		acceptor_tbl_169692();
++	transport_tbl_169774();
+ 
+ }
+ 
+@@ -254,27 +252,28 @@
+ }
+ 
+ // Action
+-void _drop_0_163171() {
+-	action_run = 163171;
++void _drop_0_169480() {
++	action_run = 169480;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void _drop_2_163187() {
+-	action_run = 163187;
++void _drop_2_169496() {
++	action_run = 169496;
+ 		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void read_round_0_163194() {
+-	action_run = 163194;
+-	uint32_t tmp_round;
+-	klee_make_symbolic(&tmp_round, sizeof(tmp_round), "tmp_round");
+-	meta.paxos_metadata.round = tmp_round;
++void read_round_0_169503() {
++	action_run = 169503;
++		
++	uint64_t t39e87857_5cd6_40f5_aca8_42d19138561d;
++	klee_make_symbolic(&t39e87857_5cd6_40f5_aca8_42d19138561d, sizeof(t39e87857_5cd6_40f5_aca8_42d19138561d), "t39e87857_5cd6_40f5_aca8_42d19138561d");
++	meta.paxos_metadata.round = t39e87857_5cd6_40f5_aca8_42d19138561d;
+ 
+ 	meta.paxos_metadata.set_drop = 1;
+ 
+@@ -282,20 +281,23 @@
+ 
+ 
+ // Action
+-void handle_1a_0_165781() {
+-	traverse_handle_1a = 1;
+-	handle_1a_msg_type = (hdr.paxos.msgtype == 0);
+-	action_run = 165781;
++void handle_1a_0_169534() {
++	action_run = 169534;
+ 		hdr.paxos.msgtype = 1;
+-		klee_make_symbolic(&tmp_9, sizeof(tmp_9), "tmp_9");
++	
++	uint64_t tbd9579f5_fa8f_4af1_864a_4159602403f5;
++	klee_make_symbolic(&tbd9579f5_fa8f_4af1_864a_4159602403f5, sizeof(tbd9579f5_fa8f_4af1_864a_4159602403f5), "tbd9579f5_fa8f_4af1_864a_4159602403f5");
++	hdr.paxos.vrnd = tbd9579f5_fa8f_4af1_864a_4159602403f5;
+ 
+-	hdr.paxos.vrnd = tmp_9;
+-		klee_make_symbolic(&tmp_11, sizeof(tmp_11), "tmp_11");
++	
++	uint64_t tbb7b863b_0796_4d67_8a0f_0d58f71546e8;
++	klee_make_symbolic(&tbb7b863b_0796_4d67_8a0f_0d58f71546e8, sizeof(tbb7b863b_0796_4d67_8a0f_0d58f71546e8), "tbb7b863b_0796_4d67_8a0f_0d58f71546e8");
++	hdr.paxos.paxosval = tbb7b863b_0796_4d67_8a0f_0d58f71546e8;
+ 
+-	hdr.paxos.paxosval = tmp_11;
+-	uint32_t tmp_acptid;
+-	klee_make_symbolic(&tmp_acptid, sizeof(tmp_acptid), "tmp_acptid");
+-	hdr.paxos.acptid = tmp_acptid;
++	
++	uint64_t t48b0df8b_1c0f_4ff5_a3aa_98c15c54ac30;
++	klee_make_symbolic(&t48b0df8b_1c0f_4ff5_a3aa_98c15c54ac30, sizeof(t48b0df8b_1c0f_4ff5_a3aa_98c15c54ac30), "t48b0df8b_1c0f_4ff5_a3aa_98c15c54ac30");
++	hdr.paxos.acptid = t48b0df8b_1c0f_4ff5_a3aa_98c15c54ac30;
+ 
+ 	meta.paxos_metadata.set_drop = 0;
+ 
+@@ -303,14 +305,13 @@
+ 
+ 
+ // Action
+-void handle_2a_0_163324() {
+-	traverse_handle_2a = 1;
+-	handle_2a_msg_type = (hdr.paxos.msgtype == 2);
+-	action_run = 163324;
++void handle_2a_0_169613() {
++	action_run = 169613;
+ 		hdr.paxos.msgtype = 3;
+-	uint32_t tmp_acptid;
+-	klee_make_symbolic(&tmp_acptid, sizeof(tmp_acptid), "tmp_acptid");
+-	hdr.paxos.acptid = tmp_acptid;
++	
++	uint64_t t020b58e3_9967_4fe6_91a2_ecd343278bbe;
++	klee_make_symbolic(&t020b58e3_9967_4fe6_91a2_ecd343278bbe, sizeof(t020b58e3_9967_4fe6_91a2_ecd343278bbe), "t020b58e3_9967_4fe6_91a2_ecd343278bbe");
++	hdr.paxos.acptid = t020b58e3_9967_4fe6_91a2_ecd343278bbe;
+ 
+ 	meta.paxos_metadata.set_drop = 0;
+ 
+@@ -318,8 +319,8 @@
+ 
+ 
+ // Action
+-void forward_0_163458() {
+-	action_run = 163458;
++void forward_0_169747() {
++	action_run = 169747;
+ 	PortId port;
+ 	klee_make_symbolic(&port, sizeof(port), "port");
+ uint32_t learnerPort;
+@@ -331,32 +332,32 @@
+ 
+ 
+ //Table
+-void acceptor_tbl_163403() {
++void acceptor_tbl_169692() {
+ 	// keys: hdr.paxos.msgtype:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		case 0: handle_1a_0_165781(); break;
+-		case 1: handle_2a_0_163324(); break;
+-		default: _drop_0_163171(); break;
++		case 0: handle_1a_0_169534(); break;
++		case 1: handle_2a_0_169613(); break;
++		default: _drop_0_169480(); break;
+ 	}
+ 	// size 4
+-	// default_action _drop_0();
++	// default_action _drop_0_169480();
+ 
+ }
+ 
+ 
+ //Table
+-void transport_tbl_163485() {
++void transport_tbl_169774() {
+ 	// keys: meta.paxos_metadata.set_drop:exact
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		case 0: _drop_2_163187(); break;
+-		default: forward_0_163458(); break;
++		case 0: _drop_2_169496(); break;
++		default: forward_0_169747(); break;
+ 	}
+ 	// size 2
+-	// default_action _drop_2();
++	// default_action _drop_2_169496();
+ 
+ }
+ 
+@@ -365,50 +366,29 @@
+ //Control
+ 
+ void egress() {
+-	place_holder_table_163612();
++	place_holder_table_169903();
+ }
+ 
+ // Action
+-void NoAction_0_163602() {
+-	action_run = 163602;
++void NoAction_0_169893() {
++	action_run = 169893;
+ 	
+ }
+ 
+ 
+ //Table
+-void place_holder_table_163612() {
++void place_holder_table_169903() {
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: NoAction_0_163602(); break;
++		default: NoAction_0_169893(); break;
+ 	}
+ 	// size 2
+-	// default_action NoAction_0();
++	// default_action NoAction_0_169893();
+ 
+ }
+ 
+-void end_assertions(){
+ 
+-	if(traverse_handle_1a && !handle_1a_msg_type && (handle_1a_msg_type != -1)){
+-		klee_warning_once("handle_1a executed with msgtype different that 1A");
+-		klee_assert(0);
+-	}
+-
+-	if(traverse_handle_2a && !handle_2a_msg_type && (handle_2a_msg_type != -1)){
+-		klee_warning_once("handle_2a executed with msgtype different that 2A");
+-		klee_assert(0);
+-	}
+-
+-	if(forward && (constant_acptid == hdr.paxos.acptid)){
+-		klee_warning_once("packet forwarded and swid not updated");
+-		klee_assert(0);
+-	}
+-
+-	if(forward && !(traverse_handle_1a || traverse_handle_2a)){
+-		klee_warning("WTH???");
+-		klee_assert(0);
+-	}
+-}
+ 
+ int main() {
+ 	TopParser();
+@@ -419,4 +399,13 @@
+ 	return 0;
+ }
+ 
++void assert_error(char msg[]) {
++	printf("Assertion Error: %s", msg);
++	klee_abort();
++}
++
++void end_assertions(){
++}
++
++
+ 

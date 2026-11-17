@@ -1,0 +1,368 @@
+--- /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/stag/reference.c	2025-12-23 11:57:27.054909581 +0100
++++ /personal/docs/uni/year_6/papers/sigcomm/assert-p4-16/benchmark_output/stag/generated.c	2025-12-23 11:57:27.054893160 +0100
+@@ -2,34 +2,47 @@
+ #include<stdio.h>
+ #include<stdint.h>
+ #include<stdlib.h>
++#include<assert.h>
++
++// KLEE function stubs
++void klee_make_symbolic(void *addr, unsigned long nbytes, const char *name);
++void klee_abort(void);
++void klee_assume(int condition);
++void klee_print_once(int id, const char *msg);
++
++// Checksum function stubs (no-op for verification)
++void verify_checksum(void) {}
++void update_checksum(void) {}
+ 
+ int assert_forward = 1;
+ int action_run;
+ 
+-int traverse_color_check = 0;
+-int standard_metadata_ingress_port_eq_1_137028;
+-int hdr_ipv4_dstAddr_eq_167772162_137028;
+-
+-void color_check_137023();
+-void set_source_color_0_136769(uint8_t color);
+-void NoAction_6_136752();
+-void set_remote_dest_0_136868();
+-void drop_0_136753();
+-void core_pass_through_0_136945();
+-void NoAction_1_136751();
++void end_assertions();
++
++
++ int standard_metadata_ingress_port_eq_1_136593;
++
++ int hdr_ipv4_dstAddr_eq_2_136593;
++
++void NoAction_1_136315();
++void core_pass_through_0_136510();
++void set_source_color_0_136333();
++void get_source_color_136351();
++void forward_136527();
+ void accept();
+-void NoAction_7_137142();
+-void set_local_dest_0_136835(uint32_t egr_port, uint8_t color);
++void set_remote_dest_0_136432();
++void NoAction_0_136305();
+ void start();
+-void get_source_color_136787();
+-void forward_136962();
+-void place_holder_table_137143();
++void NoAction_6_136316();
+ void parse_ipv4_option();
+ void reject();
++void set_local_dest_0_136399();
++void NoAction_7_136709();
+ void parse_ipv4();
+-void NoAction_0_136741();
++void color_check_136588();
++void place_holder_table_136710();
++void drop_0_136317();
+ void parse_stag();
+-void end_assertions();
+ 
+ typedef struct {
+ 	uint32_t ingress_port : 9;
+@@ -120,12 +133,6 @@
+ metadata meta;
+ standard_metadata_t standard_metadata;
+ 
+-void end_assertions(){
+-	if(traverse_color_check && standard_metadata_ingress_port_eq_1_137028 && hdr_ipv4_dstAddr_eq_167772162_137028 && assert_forward){
+-		klee_print_once(0, "Assert error: if expression standard_metadata.ingress_port == 1 && hdr.ipv4.dstAddr == 167772162, !forward evaluated to false\n");
+-	}
+-
+-}
+ 
+ void start() {
+ 	//Extract hdr.ethernet
+@@ -141,7 +148,7 @@
+ void parse_ipv4() {
+ 	//Extract hdr.ipv4
+ 	hdr.ipv4.isValid = 1;
+-	if(hdr.ipv4.ihl >= 5) { }
++	if(hdr.ipv4.ihl >= 5) { exit(1); }
+ 	if((hdr.ipv4.ihl == 5)){
+ 		accept();
+ 	} else {
+@@ -170,7 +177,7 @@
+ 
+ 
+ void accept() {
+-
++	
+ }
+ 
+ 
+@@ -184,9 +191,7 @@
+ void ParserImpl() {
+ 	klee_make_symbolic(&hdr, sizeof(hdr), "hdr");
+ 	klee_make_symbolic(&meta, sizeof(meta), "meta");
+-	standard_metadata_t tmp;
+-	klee_make_symbolic(&tmp, sizeof(tmp), "tmp");
+-	standard_metadata = tmp;
++	klee_make_symbolic(&standard_metadata, sizeof(standard_metadata), "standard_metadata");
+ 
+ 	start();
+ }
+@@ -194,56 +199,62 @@
+ //Control
+ 
+ void ingress() {
+-	if((hdr.stag.isValid != 1)) {
+-		get_source_color_136787();
+-	}
+-	forward_136962();
+-	if(action_run == 136835) {
+-		color_check_137023();
++	if(!hdr.stag.isValid) {
++	get_source_color_136351();
++}
++	forward_136527();
++	if(action_run == 136399) {
++		 	color_check_136588();
+ 
+ 	}
+ }
+ 
+ // Action
+-void NoAction_0_136741() {
+-	action_run = 136741;
+-
++void NoAction_0_136305() {
++	action_run = 136305;
++	
+ }
+ 
+ 
+ // Action
+-void NoAction_1_136751() {
+-	action_run = 136751;
+-
++void NoAction_1_136315() {
++	action_run = 136315;
++	
+ }
+ 
+ 
+ // Action
+-void NoAction_6_136752() {
+-	action_run = 136752;
+-
++void NoAction_6_136316() {
++	action_run = 136316;
++	
+ }
+ 
+ 
+ // Action
+-void drop_0_136753() {
+-	action_run = 136753;
+-	mark_to_drop();
++void drop_0_136317() {
++	action_run = 136317;
++		mark_to_drop();
+ 
+ }
+ 
+ 
+ // Action
+-void set_source_color_0_136769(uint8_t color) {
+-	action_run = 136769;
++void set_source_color_0_136333() {
++	action_run = 136333;
++	uint8_t color;
++	klee_make_symbolic(&color, sizeof(color), "color");
+ 	meta.local_md.src_port_color = color;
+ 
+ }
+ 
+ 
+ // Action
+-void set_local_dest_0_136835(uint32_t egr_port, uint8_t color) {
+-	action_run = 136835;
++void set_local_dest_0_136399() {
++	action_run = 136399;
++	uint32_t egr_port;
++	klee_make_symbolic(&egr_port, sizeof(egr_port), "egr_port");
++uint8_t color;
++	klee_make_symbolic(&color, sizeof(color), "color");
+ 	standard_metadata.egress_spec = egr_port;
+ 	meta.local_md.dst_port_color = color;
+ 	hdr.stag.isValid = 0;
+@@ -252,8 +263,8 @@
+ 
+ 
+ // Action
+-void set_remote_dest_0_136868() {
+-	action_run = 136868;
++void set_remote_dest_0_136432() {
++	action_run = 136432;
+ 	uint32_t egr_port;
+ 	klee_make_symbolic(&egr_port, sizeof(egr_port), "egr_port");
+ 	standard_metadata.egress_spec = egr_port;
+@@ -270,8 +281,8 @@
+ 
+ 
+ // Action
+-void core_pass_through_0_136945() {
+-	action_run = 136945;
++void core_pass_through_0_136510() {
++	action_run = 136510;
+ 	uint32_t egr_port;
+ 	klee_make_symbolic(&egr_port, sizeof(egr_port), "egr_port");
+ 	standard_metadata.egress_spec = egr_port;
+@@ -280,30 +291,50 @@
+ 
+ 
+ //Table
+-void get_source_color_136787() {
+-	if(standard_metadata.ingress_port == 1){
+-		set_source_color_0_136769(0);
++void get_source_color_136351() {
++	// keys: standard_metadata.ingress_port:exact
++	int symbol;
++	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
++	switch(symbol) {
++		case 0: set_source_color_0_136333(); break;
++		default: NoAction_0_136305(); break;
+ 	}
++	// default_action NoAction_0_136305();
++
+ }
+ 
+ 
+ //Table
+-void forward_136962() {
+-	if(hdr.ipv4.dstAddr == 167772162){
+-		set_local_dest_0_136835(2, 1);
++void forward_136527() {
++	// keys: hdr.ipv4.dstAddr:ternary
++	int symbol;
++	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
++	switch(symbol) {
++		case 0: set_local_dest_0_136399(); break;
++		case 1: set_remote_dest_0_136432(); break;
++		case 2: core_pass_through_0_136510(); break;
++		default: NoAction_1_136315(); break;
+ 	}
+-}
++	// size 1024
++	// default_action NoAction_1_136315();
+ 
+-// Table
+-void color_check_137023() {
++}
+ 
+-	traverse_color_check = 1;
+-	standard_metadata_ingress_port_eq_1_137028 = (standard_metadata.ingress_port == 1);
+-	hdr_ipv4_dstAddr_eq_167772162_137028 = (hdr.ipv4.dstAddr == 167772162);
+ 
+-	if(meta.local_md.dst_port_color == 1 && meta.local_md.src_port_color == 0){
+-		drop_0_136753();
++//Table
++void color_check_136588() {
++standard_metadata_ingress_port_eq_1_136593 = (standard_metadata.ingress_port  ==  1);
++	hdr_ipv4_dstAddr_eq_2_136593 = (hdr.ipv4.dstAddr  ==  167772162);
++		// keys: meta.local_md.dst_port_color:exact, meta.local_md.src_port_color:exact
++	int symbol;
++	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
++	switch(symbol) {
++		case 0: drop_0_136317(); break;
++		default: NoAction_6_136316(); break;
+ 	}
++	// size 1024
++	// default_action drop_0_136317();
++
+ }
+ 
+ 
+@@ -311,25 +342,25 @@
+ //Control
+ 
+ void egress() {
+-	place_holder_table_137143();
++	place_holder_table_136710();
+ }
+ 
+ // Action
+-void NoAction_7_137142() {
+-	action_run = 137142;
+-
++void NoAction_7_136709() {
++	action_run = 136709;
++	
+ }
+ 
+ 
+ //Table
+-void place_holder_table_137143() {
++void place_holder_table_136710() {
+ 	int symbol;
+ 	klee_make_symbolic(&symbol, sizeof(symbol), "symbol");
+ 	switch(symbol) {
+-		default: NoAction_7_137142(); break;
++		default: NoAction_7_136709(); break;
+ 	}
+ 	// size 2
+-	// default_action NoAction_7();
++	// default_action NoAction_7_136709();
+ 
+ }
+ 
+@@ -338,14 +369,14 @@
+ //Control
+ 
+ void computeChecksum() {
+-
++	
+ }
+ 
+ 
+ //Control
+ 
+ void verifyChecksum() {
+-
++	
+ }
+ 
+ 
+@@ -353,15 +384,16 @@
+ 
+ void DeparserImpl() {
+ 	//Emit hdr.ethernet
+-
++	
+ 	//Emit hdr.ipv4
+-
++	
+ 	//Emit hdr.ipv4_option
+-
++	
+ 	//Emit hdr.stag
+-
++	
+ }
+ 
++
+ int main() {
+ 	ParserImpl();
+ 	ingress();
+@@ -371,5 +403,14 @@
+ 	return 0;
+ }
+ 
++void assert_error(char msg[]) {
++	printf("Assertion Error: %s", msg);
++	klee_abort();
++}
++
++void end_assertions(){
++	//if(!(!((standard_metadata_ingress_port_eq_1_136593) && (hdr_ipv4_dstAddr_eq_2_136593)) || (!(assert_forward)))) assert_error("!((standard_metadata_ingress_port_eq_1_136593) && (hdr_ipv4_dstAddr_eq_2_136593)) || (!(assert_forward))");
++}
++
+ 
+ 
